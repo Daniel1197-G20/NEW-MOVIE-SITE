@@ -5,7 +5,7 @@ import cors from "cors";
 const app = express();
 app.use(cors());
 
-const TMDB_API_KEY = "bd38d5884e1b9356ed838d08fd3bdea9";
+const TMDB_API_KEY = "your_tmdb_api_key_here"; // Paste your key here
 
 app.get("/", (req, res) => res.send("🎬 Film Haven backend running!"));
 

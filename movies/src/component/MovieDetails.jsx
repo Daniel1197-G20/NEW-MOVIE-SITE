@@ -244,7 +244,7 @@ const MovieDetails = () => {
                 className="btn-download"
                 onClick={() =>
                   window.open(
-                    `https://awafim.net/search.php?searchname=${encodeURIComponent(
+                    `https://fzmovies.live/search.php?searchname=${encodeURIComponent(
                       movie.Title
                     )}`,
                     "_blank"
