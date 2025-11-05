@@ -73,35 +73,32 @@
 
 // export default Home;
 
+
+
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MovieCard from "./MovieCard";
 import SearchBar from "./searchBar";
 import "../App.css";
 
-const API_URL = "https://www.omdbapi.com?apikey=27c8ae17";
-
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [showingLatest, setShowingLatest] = useState(true);
   const navigate = useNavigate();
 
-  // 🔹 Fetch Latest Movies from your backend (TMDb)
-  const fetchLatestMovies = async (pageNum = 1) => {
+  // ✅ Fetch latest movies from backend (TMDb)
+  const fetchLatestMovies = async (pageNumber = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/latest?page=${pageNum}`);
+      const res = await fetch(`http://localhost:5000/latest?page=${pageNumber}`);
       const data = await res.json();
       if (data.success) {
-        if (pageNum === 1) {
-          setMovies(data.movies);
-        } else {
-          setMovies((prev) => [...prev, ...data.movies]);
-        }
-        setShowingLatest(true);
+        setMovies((prev) =>
+          pageNumber === 1 ? data.movies : [...prev, ...data.movies]
+        );
       }
     } catch (err) {
       console.error("Error fetching latest movies:", err);
@@ -110,35 +107,34 @@ const Home = () => {
     }
   };
 
-  // 🔹 Search Movies from OMDb
+  // ✅ Search movies using OMDb
   const searchMovies = async (title, newSearch = true, pageNumber = 1) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}&s=${title}&page=${pageNumber}`);
-      const data = await response.json();
+    if (!title.trim()) {
+      fetchLatestMovies(1);
+      return;
+    }
 
-      if (newSearch) {
-        setMovies(data.Search || []);
-        setPage(1);
-      } else {
-        setMovies((prev) => [...prev, ...(data.Search || [])]);
-      }
-      setShowingLatest(false);
-    } catch (error) {
-      console.error("Error searching movies:", error);
-    } finally {
-      setLoading(false);
+    const response = await fetch(
+      `https://www.omdbapi.com?apikey=27c8ae17&s=${title}&page=${pageNumber}`
+    );
+    const data = await response.json();
+
+    if (newSearch) {
+      setMovies(data.Search || []);
+      setPage(1);
+    } else {
+      setMovies((prevMovies) => [...prevMovies, ...(data.Search || [])]);
     }
   };
 
-  // 🔹 Load latest movies by default on page load
+  // ✅ Load trending movies by default
   useEffect(() => {
     fetchLatestMovies();
   }, []);
 
   return (
     <div className="app">
-      <h1>🎬 Film Haven</h1>
+      <h1>Film Haven</h1>
 
       <SearchBar
         searchTerm={searchTerm}
@@ -146,14 +142,16 @@ const Home = () => {
         searchMovies={searchMovies}
       />
 
-      {loading ? (
-        <div className="loading">Loading...</div>
-      ) : movies?.length > 0 ? (
+      {loading && <div className="loading">Loading...</div>}
+
+      {movies?.length > 0 ? (
         <div className="container">
           {movies.map((movie) => (
             <div
-              key={movie.imdbID}
-              onClick={() => navigate(`/details/${movie.imdbID}`)}
+              key={movie.imdbID || movie.Title}
+              onClick={() =>
+                navigate(`/details/${encodeURIComponent(movie.Title)}`)
+              }
             >
               <MovieCard movie={movie} />
             </div>
@@ -170,10 +168,10 @@ const Home = () => {
           className="load-more"
           onClick={() => {
             const nextPage = page + 1;
-            if (showingLatest) {
-              fetchLatestMovies(nextPage);
+            if (searchTerm) {
+              searchMovies(searchTerm, false, nextPage);
             } else {
-              searchMovies(searchTerm || "Avengers", false, nextPage);
+              fetchLatestMovies(nextPage);
             }
             setPage(nextPage);
           }}

@@ -5,19 +5,15 @@ import cors from "cors";
 const app = express();
 app.use(cors());
 
-const TMDB_API_KEY = "bd38d5884e1b9356ed838d08fd3bdea9";
+const TMDB_API_KEY = "your_tmdb_api_key_here"; // Paste your key here
 
-app.get("/", (req, res) => {
-  res.send("🎬 Film Haven backend is running!");
-});
+app.get("/", (req, res) => res.send("🎬 Film Haven backend running!"));
 
 app.get("/latest", async (req, res) => {
   try {
     const page = req.query.page || 1;
-
     const url = `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_API_KEY}&page=${page}`;
     const { data } = await axios.get(url);
-
 
     const movies = data.results.map((m) => ({
       imdbID: m.id,
@@ -39,7 +35,6 @@ app.get("/latest", async (req, res) => {
   }
 });
 
-// ✅ Start server
 const PORT = 5000;
 app.listen(PORT, () =>
   console.log(`✅ Film Haven backend running on port ${PORT}`)
