@@ -1,6 +1,7 @@
 import express from "express";
 import axios from "axios";
 import cors from "cors";
+import cheerio from "cheerio";
 
 const app = express();
 app.use(cors());
@@ -10,48 +11,45 @@ app.get("/download", async (req, res) => {
   if (!url) return res.status(400).send("Missing URL");
 
   try {
-    // ✅ Step 1: Define allowed domains
-    const allowedHosts = [
-      "fzmovies.live",
-      "nkiri.com",
-      "tv.awafim.com.ng",
-      "www.thenetnaija.net",
-      "o2tvseries4u.com",
-      "fztvseries.live",
-    ];
+    // Step 1: Load the HTML page
+    const page = await axios.get(url);
+    const $ = cheerio.load(page.data);
 
-    // ✅ Step 2: Extract hostname from the given URL
-    const hostname = new URL(url).hostname;
+    // Step 2: Try to find a direct video link (.mp4 or .mkv)
+    let realFileLink =
+      $("a[href$='.mp4']").attr("href") || $("a[href$='.mkv']").attr("href");
 
-    // ✅ Step 3: Block anything not in allowed list
-    if (!allowedHosts.includes(hostname)) {
-      console.warn(`❌ Blocked download attempt from disallowed domain: ${hostname}`);
-      return res.status(403).send("❌ Domain not allowed");
+    if (!realFileLink) {
+      console.log("No direct video link found on page");
+      return res.status(404).send("No downloadable video found");
     }
 
-    // ✅ Step 4: Stream the file if the domain is allowed
-    const response = await axios.get(url, {
+    // Step 3: Fix relative URLs if necessary
+    if (realFileLink.startsWith("/")) {
+      const baseUrl = new URL(url).origin;
+      realFileLink = baseUrl + realFileLink;
+    }
+
+    console.log("🎬 Found video link:", realFileLink);
+
+    
+    const videoResponse = await axios({
+      url: realFileLink,
+      method: "GET",
       responseType: "stream",
-      headers: req.headers.range ? { Range: req.headers.range } : {},
     });
 
-    // ✅ Step 5: Set headers so the browser downloads properly
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${name || "file"}.mp4"`
+      `attachment; filename="${name || "movie"}.mp4"`
     );
-    if (response.headers["content-type"])
-      res.setHeader("Content-Type", response.headers["content-type"]);
-    if (response.headers["content-length"])
-      res.setHeader("Content-Length", response.headers["content-length"]);
-    if (response.headers["accept-ranges"])
-      res.setHeader("Accept-Ranges", response.headers["accept-ranges"]);
+    res.setHeader("Content-Type", "video/mp4");
 
-    response.data.pipe(res);
+    videoResponse.data.pipe(res);
   } catch (err) {
-    console.error(err.message);
+    console.error("❌ Error:", err.message);
     res.status(500).send("Failed to fetch file");
   }
 });
 
-app.listen(5000, () => console.log("✅ Proxy running on port 5000"));
+app.listen(5000, () => console.log("🎬 Proxy running on port 5000"));
