@@ -1,55 +1,46 @@
 import express from "express";
 import axios from "axios";
 import cors from "cors";
-import cheerio from "cheerio";
 
 const app = express();
 app.use(cors());
 
-app.get("/download", async (req, res) => {
-  const { url, name } = req.query;
-  if (!url) return res.status(400).send("Missing URL");
+const TMDB_API_KEY = "bd38d5884e1b9356ed838d08fd3bdea9";
 
+app.get("/", (req, res) => {
+  res.send("🎬 Film Haven backend is running!");
+});
+
+app.get("/latest", async (req, res) => {
   try {
-    // Step 1: Load the HTML page
-    const page = await axios.get(url);
-    const $ = cheerio.load(page.data);
+    const page = req.query.page || 1;
 
-    // Step 2: Try to find a direct video link (.mp4 or .mkv)
-    let realFileLink =
-      $("a[href$='.mp4']").attr("href") || $("a[href$='.mkv']").attr("href");
+    const url = `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_API_KEY}&page=${page}`;
+    const { data } = await axios.get(url);
 
-    if (!realFileLink) {
-      console.log("No direct video link found on page");
-      return res.status(404).send("No downloadable video found");
-    }
 
-    // Step 3: Fix relative URLs if necessary
-    if (realFileLink.startsWith("/")) {
-      const baseUrl = new URL(url).origin;
-      realFileLink = baseUrl + realFileLink;
-    }
+    const movies = data.results.map((m) => ({
+      imdbID: m.id,
+      Title: m.title || m.name,
+      Year: m.release_date ? m.release_date.split("-")[0] : "N/A",
+      Poster: m.poster_path
+        ? `https://image.tmdb.org/t/p/w500${m.poster_path}`
+        : "https://via.placeholder.com/400x600?text=No+Image",
+      Type: "movie",
+    }));
 
-    console.log("🎬 Found video link:", realFileLink);
-
-    
-    const videoResponse = await axios({
-      url: realFileLink,
-      method: "GET",
-      responseType: "stream",
-    });
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${name || "movie"}.mp4"`
-    );
-    res.setHeader("Content-Type", "video/mp4");
-
-    videoResponse.data.pipe(res);
+    res.json({ success: true, movies });
   } catch (err) {
-    console.error("❌ Error:", err.message);
-    res.status(500).send("Failed to fetch file");
+    console.error("❌ Error fetching latest movies:", err.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch latest movies",
+    });
   }
 });
 
-app.listen(5000, () => console.log("🎬 Proxy running on port 5000"));
+// ✅ Start server
+const PORT = 5000;
+app.listen(PORT, () =>
+  console.log(`✅ Film Haven backend running on port ${PORT}`)
+);
