@@ -9,45 +9,30 @@
 //   const navigate = useNavigate();
 //   const [movie, setMovie] = useState(null);
 //   const [loading, setLoading] = useState(true);
-//   const [seasonList, setSeasonList] = useState([]);
-//   const [selectedSeason, setSelectedSeason] = useState("");
 
 //   useEffect(() => {
 //     const fetchMovie = async () => {
-//       const res = await fetch(`${API_URL}&i=${id}&plot=full`);
-//       const data = await res.json();
-//       setMovie(data);
-//       setLoading(false);
-
-//       if (data.Type === "series" && data.totalSeasons) {
-//         const seasons = Array.from(
-//           { length: parseInt(data.totalSeasons) },
-//           (_, i) => i + 1
-//         );
-//         setSeasonList(seasons);
+//       setLoading(true);
+//       try {
+//         const res = await fetch(`${API_URL}&t=${id}&plot=full`);
+//         const data = await res.json();
+//         if (data.Response === "True") {
+//           setMovie(data);
+//         } else {
+//           setMovie(null);
+//         }
+//       } catch (err) {
+//         console.error("Error fetching movie:", err);
+//         setMovie(null);
+//       } finally {
+//         setLoading(false);
 //       }
 //     };
 //     fetchMovie();
 //   }, [id]);
 
-//   const handleDownload = (type) => {
-//     let searchQuery = "";
-
-//     if (type === "movie") {
-//       searchQuery = movie.Title;
-//     } else if (type === "series" && selectedSeason) {
-//       searchQuery = `${movie.Title} Season ${selectedSeason}`;
-//     }
-
-//     const awafimUrl = `https://tv.awafim.com.ng/?s=${encodeURIComponent(
-//       searchQuery
-//     )}`;
-//     window.open(awafimUrl, "_blank");
-//   };
-
 //   if (loading) return <div className="loading">Loading...</div>;
-//   if (!movie || movie.Response === "False")
-//     return <div className="error">Movie not found</div>;
+//   if (!movie) return <div className="error">Movie not found</div>;
 
 //   return (
 //     <div className="details-page">
@@ -66,7 +51,6 @@
 //       >
 //         <div className="details-overlay">
 //           <div className="details-content">
-//             {/* Poster */}
 //             <div className="details-poster">
 //               <img
 //                 src={
@@ -78,7 +62,6 @@
 //               />
 //             </div>
 
-//             {/* Info */}
 //             <div className="details-info">
 //               <h1>{movie.Title}</h1>
 //               <p className="meta">
@@ -92,7 +75,6 @@
 //                 <strong>Actors:</strong> {movie.Actors}
 //               </p>
 
-//               {/* Watch Trailer */}
 //               <button
 //                 className="btn-trailer"
 //                 onClick={() =>
@@ -107,39 +89,19 @@
 //                 ▶ Watch Trailer
 //               </button>
 
-//               {/* Movie Download */}
-//               {movie.Type === "movie" ? (
-//                 <button
-//                   className="btn-download"
-//                   onClick={() => handleDownload("movie")}
-//                 >
-//                   ⤓ Download Movie
-//                 </button>
-//               ) : (
-//                 <div className="series-controls">
-//                   <h3>Select Season</h3>
-//                   <select
-//                     onChange={(e) => setSelectedSeason(e.target.value)}
-//                     value={selectedSeason}
-//                   >
-//                     <option value="">-- Select Season --</option>
-//                     {seasonList.map((num) => (
-//                       <option key={num} value={num}>
-//                         Season {num}
-//                       </option>
-//                     ))}
-//                   </select>
-
-//                   {selectedSeason && (
-//                     <button
-//                       className="btn-download"
-//                       onClick={() => handleDownload("series")}
-//                     >
-//                       ⤓ Download Season {selectedSeason}
-//                     </button>
-//                   )}
-//                 </div>
-//               )}
+//               <button
+//                 className="btn-download"
+//                 onClick={() =>
+//                   window.open(
+//                     `https://awafim.net/search.php?searchname=${encodeURIComponent(
+//                       movie.Title
+//                     )}`,
+//                     "_blank"
+//                   )
+//                 }
+//               >
+//                 ⤓ Download {movie.Type === "series" ? "Series" : "Movie"}
+//               </button>
 //             </div>
 //           </div>
 //         </div>
@@ -149,6 +111,11 @@
 // };
 
 // export default MovieDetails;
+
+
+
+
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "../App.css";
@@ -156,10 +123,13 @@ import "../App.css";
 const API_URL = "https://www.omdbapi.com?apikey=27c8ae17";
 
 const MovieDetails = () => {
-  const { id } = useParams(); // This will be the title
+  const { id } = useParams();
   const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
+
   const [loading, setLoading] = useState(true);
+
+
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -181,6 +151,8 @@ const MovieDetails = () => {
     };
     fetchMovie();
   }, [id]);
+
+
 
   if (loading) return <div className="loading">Loading...</div>;
   if (!movie) return <div className="error">Movie not found</div>;
@@ -244,7 +216,7 @@ const MovieDetails = () => {
                 className="btn-download"
                 onClick={() =>
                   window.open(
-                    `https://awafim.net/search.php?searchname=${encodeURIComponent(
+                    `https://tv.awafim.com.ng/search.php?searchname=${encodeURIComponent(
                       movie.Title
                     )}`,
                     "_blank"

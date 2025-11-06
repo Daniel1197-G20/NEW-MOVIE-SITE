@@ -72,15 +72,15 @@
 
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./component/Home"; // 👈 the file you just made
-import MovieDetails from "./component/MovieDetails"; // 👈 you’ll create this next
+import Home from "./component/Home";
+import MovieDetails from "./component/MovieDetails";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} /> {/* Main page */}
-        <Route path="/details/:id" element={<MovieDetails />} /> {/* Details page */}
+        <Route path="/" element={<Home />} />
+        <Route path="/details/:id" element={<MovieDetails />} />
       </Routes>
     </Router>
   );
